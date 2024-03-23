@@ -1,3 +1,8 @@
+#!/usr/bin/env python
+
+import rospy
+from sensor_msgs.msg import Image
+from cv_bridge import CvBridge
 import cv2
 
 # โหลด pre-trained Haar cascade สำหรับ face detection
@@ -12,23 +17,24 @@ glasses_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_eye
 # โมเดล pre-trained สำหรับการตรวจจับเพศ
 gender_net = cv2.dnn.readNetFromCaffe('models/deploy_gender.prototxt', 'models/gender_net.caffemodel')
 
-def detect_masks_glasses_gender(image_path):
-    # อ่านภาพจากไฟล์
-    img = cv2.imread(image_path)
-    
+def image_callback(msg):
+    bridge = CvBridge()
+    # แปลงข้อมูลภาพจาก ROS Image message เป็น OpenCV image
+    cv_image = bridge.imgmsg_to_cv2(msg, desired_encoding="bgr8")
+
     # แปลงภาพเป็น grayscale เนื่องจาก Haar cascades ทำงานกับภาพแบบ grayscale
-    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    gray = cv2.cvtColor(cv_image, cv2.COLOR_BGR2GRAY)
     
     # ตรวจจับใบหน้าในภาพ
     faces = face_cascade.detectMultiScale(gray, 1.3, 5)
     
     for (x, y, w, h) in faces:
         # วาดสี่เหลี่ยมรอบใบหน้า
-        cv2.rectangle(img, (x, y), (x+w, y+h), (255, 0, 0), 2)
+        cv2.rectangle(cv_image, (x, y), (x+w, y+h), (255, 0, 0), 2)
         
         # ในส่วนของใบหน้าที่ตรวจพบ จะตรวจจับแมส
         roi_gray = gray[y:y+h, x:x+w]
-        roi_color = img[y:y+h, x:x+w]
+        roi_color = cv_image[y:y+h, x:x+w]
         
         masks = mask_cascade.detectMultiScale(roi_gray, scaleFactor=1.1, minNeighbors=5, minSize=(20, 20))
         
@@ -50,12 +56,16 @@ def detect_masks_glasses_gender(image_path):
         
         # แสดงเพศบนภาพ
         label = "{}".format(gender)
-        cv2.putText(img, label, (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
+        cv2.putText(cv_image, label, (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
     
     # แสดงภาพผลลัพธ์
-    cv2.imshow('Detection', img)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
+    cv2.imshow('Detection', cv_image)
+    cv2.waitKey(3)
 
-# เรียกใช้ฟังก์ชันเพื่อตรวจจับใบหน้า แมส และแว่น รวมถึงการตรวจจับเพศ และแสดงผลลัพธ์
-detect_masks_glasses_gender("path_to_your_image.jpg")
+def camera_detection():
+    rospy.init_node('camera_detection_node', anonymous=True)
+    rospy.Subscriber('/camera/image_raw', Image, image_callback)
+    rospy.spin()
+
+if __name__ == '__main__':
+    camera_detection()
