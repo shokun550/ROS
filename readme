@@ -1,7 +1,0 @@
-sudo apt update
-sudo apt-get install ros-melodic-cv-camera
-sudo apt-get install ros-melodic-cv-bridge
-sudo apt-get install ros-melodic-image-transport
-sudo apt-get install ros-melodic-camera-calibration
-sudo apt-get install ros-melodic-vision-opencv
-
