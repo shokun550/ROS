@@ -1,2 +1,7 @@
 sudo apt update
-sudo apt install python3-opencv python3-opencv-headless
+sudo apt-get install ros-melodic-cv-camera
+sudo apt-get install ros-melodic-cv-bridge
+sudo apt-get install ros-melodic-image-transport
+sudo apt-get install ros-melodic-camera-calibration
+sudo apt-get install ros-melodic-vision-opencv
+
